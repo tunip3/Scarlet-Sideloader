@@ -7,7 +7,9 @@ The names are randomised because Microsoft has started to detect apps based on t
 When private apps and randomised names are combined it is harder for Microsoft to detect the apps so as long as you remain responsible your account should take longer to get deactivated. Private apps also come with a secondary benefit of showing the package name rather than the store name once installed, this means that Retroarch once installed will still show up as Retroarch.
 
 ## Support
-[Creating User Groups](#creating-user-groups)
+1. [Creating User Groups](#creating-user-groups)
+2. [Obtaining A Developer Account](#obtaining-a-developer-account)
+3. [Getting Your .AspNet.Cookies](#getting-your-aspnetcookies)
 
 
 ### Creating User Groups
@@ -33,7 +35,7 @@ In order to use private apps you must use what is known as "Known User Groups". 
 
 
 
-### Obtaining a developer account
+### Obtaining A Developer Account
 If you do not already have a developer account, obtaining one is fairly easily and can be done through [Microsoft's official web page](https://partner.microsoft.com/dashboard/registration)
 
 You should select the individual account option when signing up.
@@ -44,7 +46,7 @@ Note that your partner centre account region may be different to your main accou
 When signing up for an account in a different region you should use fake information such as a McDonalds address in the region for everything except the billing information.
 
 
-### Getting your .AspNet.Cookies
+### Getting Your .AspNet.Cookies
 
 For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Dungeon/PartnerToken/tree/054d5e0154d32de86e44ed877f575002d5e90f53) or get it manually.
 
