@@ -1,5 +1,6 @@
 # Scarlet-Sideloader-GUI
 Scarlet Sideloader GUI is as the name implies a GUI version of the Scarlet Sideloader tool designed to help you push apps to retail via the store.
+
 ![image](https://user-images.githubusercontent.com/26260613/224582532-e4c0f018-c7e2-480d-a7b9-98b44336e02d.png)
 
 This will only push apps to the store with randomized names and will only allow you to push private apps to selected groups.
