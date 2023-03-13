@@ -2,9 +2,9 @@
 Scarlet Sideloader GUI is as the name implies a GUI version of the Scarlet Sideloader tool designed to help you push apps to retail via the store.
 ![image](https://user-images.githubusercontent.com/26260613/224582532-e4c0f018-c7e2-480d-a7b9-98b44336e02d.png)
 
-This will only push apps to the store with randomised names and will only allow you to push private apps to selected groups.
-The names are randomised because Microsoft has started to detect apps based on their names and apps are private because private apps are harder to detect.
-When private apps and randomised names are combined it is harder for Microsoft to detect the apps so as long as you remain responsible your account should take longer to get deactivated. Private apps also come with a secondary benefit of showing the package name rather than the store name once installed, this means that Retroarch once installed will still show up as Retroarch.
+This will only push apps to the store with randomized names and will only allow you to push private apps to selected groups.
+The names are randomized because Microsoft has started to detect apps based on their names and apps are private because private apps are harder to detect.
+When private apps and randomized names are combined it is harder for Microsoft to detect the apps, so as long as you remain responsible, your account should take longer to get deactivated. Private apps also come with a secondary benefit of showing the package name rather than the store name once installed, this means that Retroarch once installed will still show up as Retroarch.
 
 ## Support
 1. [Creating User Groups](#creating-user-groups)
@@ -13,7 +13,7 @@ When private apps and randomised names are combined it is harder for Microsoft t
 
 
 ### Creating User Groups
-In order to use private apps you must use what is known as "Known User Groups". A "Known User Group" is a group of emails defined in partner center which you can grant access to a private app, only accounts with their email address in this group will be able to see the app once it passes certification.
+In order to use private apps, you must use what is known as "Known User Groups". A "Known User Group" is a group of emails defined in partner center which you can grant access to a private app, only accounts with their email address in this group will be able to see the app once it passes certification.
 
 1. Navigate to the [Customer Groups Portion of Partner center](https://partner.microsoft.com/en-us/dashboard/analytics/customers)
 ![image](https://user-images.githubusercontent.com/26260613/224698318-fcc9cead-284c-4bad-b137-191668e6d240.png)
@@ -41,9 +41,9 @@ If you do not already have a developer account, obtaining one is fairly easily a
 You should select the individual account option when signing up.
 
 You may be able to get a cheaper account by creating an account in another region.
-If you want to go down this route you can find a spreadsheet on what region is currently the cheapest [here](https://docs.google.com/spreadsheets/d/1uwcU4AoTbC-8Of3ukC6Mut8_EwvPbrWlL94dbTo2wV4/edit?usp=drivesdk).
-Note that your partner centre account region may be different to your main account region.
-When signing up for an account in a different region you should use fake information such as a McDonalds address in the region for everything except the billing information.
+If you want to go down this route, you can find a spreadsheet on what region is currently the cheapest [here](https://docs.google.com/spreadsheets/d/1uwcU4AoTbC-8Of3ukC6Mut8_EwvPbrWlL94dbTo2wV4/edit?usp=drivesdk).
+Note that your partner center account region may be different to your main account region.
+When signing up for an account in a different region, you should use fake information such as a McDonald's address in the region for everything except the billing information.
 
 
 ### Getting Your .AspNet.Cookies
@@ -52,7 +52,7 @@ For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Du
 
 #### Manually getting .AspNET.Cookies:
 
-1. Open [Microsoft Partner Centre](https://partner.microsoft.com/en-us/dashboard/apps-and-games/overview)
+1. Open [Microsoft Partner Center](https://partner.microsoft.com/en-us/dashboard/apps-and-games/overview)
 ![image](https://user-images.githubusercontent.com/26260613/224584000-67b44326-2675-4266-bd9d-8631c8ef23bd.png)
 
 2. Open the developer tools (ctrl-shift-i in edge) and select Application
@@ -61,7 +61,7 @@ For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Du
 3. Select Cookies 
 ![image](https://user-images.githubusercontent.com/26260613/224584165-0e6cdfa1-4d88-4cbf-a2eb-2d69982d2e2d.png)
 
-4. Select Partner Centre in Cookies
+4. Select Partner Center in Cookies
 ![image](https://user-images.githubusercontent.com/26260613/224584276-bf7ecf31-5331-49e3-a7b3-115a75039058.png)
 
 5. Select .AspNet.Cookies
@@ -73,5 +73,3 @@ For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Du
 7. Paste this into Scarlet Sideloader
 
 ![image](https://user-images.githubusercontent.com/26260613/224584513-b322ebc2-6bc6-462e-a12e-ffd38b1b7ce7.png)
-
-
