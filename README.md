@@ -13,9 +13,10 @@ If you do not already have a developer account, obtaining one is fairly easily a
 
 You should select the individual account option when signing up.
 
-You may be able to get a cheaper account by creating an account in another region. This does not currently need a vpn, phone number or verifiable address in the country where you are creating the account. This is not recommended as it may technically constitute fraud. 
-However if you want to go down this route you can find a spreadsheet on what regions are the cheapest [here](https://docs.google.com/spreadsheets/d/1uwcU4AoTbC-8Of3ukC6Mut8_EwvPbrWlL94dbTo2wV4/edit?usp=drivesdk).
-If you are going down this route you should use a fake but real address (such as the address for a McDonalds) from the country you are purchasing as well as making up a fake phone number. The one place where you should use the correct information is on your billing address and billing name.
+You may be able to get a cheaper account by creating an account in another region.
+If you want to go down this route you can find a spreadsheet on what region is currently the cheapest [here](https://docs.google.com/spreadsheets/d/1uwcU4AoTbC-8Of3ukC6Mut8_EwvPbrWlL94dbTo2wV4/edit?usp=drivesdk).
+Please note that your partner centre account region may be different to your main account region.
+When signing up for an account in a different region you should use fake information such as a McDonalds address in the region for everything except the billing information.
 
 ## Getting your .AspNet.Cookies
 
