@@ -56,6 +56,7 @@ If you have partner token installed simply log in to partner center and head to 
 ![image](https://user-images.githubusercontent.com/26260613/224827289-42ef1ad7-7ede-4c38-a20e-cb3988af55b8.png)
 
 Then just paste the cookie into Scarlet Sideloader.
+
 ![image](https://user-images.githubusercontent.com/26260613/224584513-b322ebc2-6bc6-462e-a12e-ffd38b1b7ce7.png)
 
 
