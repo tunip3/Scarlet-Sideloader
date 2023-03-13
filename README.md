@@ -48,7 +48,17 @@ When signing up for an account in a different region, you should use fake inform
 
 ### Getting Your .AspNet.Cookies
 
-For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Dungeon/PartnerToken/tree/054d5e0154d32de86e44ed877f575002d5e90f53) or get it manually.
+For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Dungeon/PartnerToken/) or get it manually.
+
+#### Using partner token
+If you have partner token installed simply log in to partner center and head to the dashboard, then select the extension and your cookie will be copied to your clip board.
+![image](https://user-images.githubusercontent.com/26260613/224825648-2a9be738-dee2-4681-8fd0-6b5d96fa6406.png)
+![image](https://user-images.githubusercontent.com/26260613/224827289-42ef1ad7-7ede-4c38-a20e-cb3988af55b8.png)
+
+Then just paste the cookie into Scarlet Sideloader.
+![image](https://user-images.githubusercontent.com/26260613/224584513-b322ebc2-6bc6-462e-a12e-ffd38b1b7ce7.png)
+
+
 
 #### Manually getting .AspNET.Cookies:
 
@@ -70,6 +80,6 @@ For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Du
 6. Copy the Cookie Value
 ![image](https://user-images.githubusercontent.com/26260613/224584477-ed1352c2-7d59-449e-bf27-ad3df38eeb68.png)
 
-7. Paste this into Scarlet Sideloader
+7. Paste the Cookie into Scarlet Sideloader
 
 ![image](https://user-images.githubusercontent.com/26260613/224584513-b322ebc2-6bc6-462e-a12e-ffd38b1b7ce7.png)
