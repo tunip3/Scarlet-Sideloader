@@ -1,37 +1,48 @@
-# Scarlet-Sideloader
-A cydia impactor style tool to quickly patch and push apps to retail 
+# Scarlet-Sideloader-GUI
+Scarlet Sideloader GUI is as the name implies a GUI version of the Scarlet Sideloader tool designed to help you push apps to retail via the store.
+![image](https://user-images.githubusercontent.com/26260613/224582532-e4c0f018-c7e2-480d-a7b9-98b44336e02d.png)
 
-The code is extremely messy. The project is also based purely on reverse engineering using burpsuite, no documentation or proprietary information were used in the creation of this and it shows.
+This will only push apps to the store with randomised names and will only allow you to push private apps to selected groups.
+This is for the simple reason that private apps are harder to detect and Microsoft has also seemingly started to detect apps based on their names.
+However fret not as private apps once installed will show the display name from the appx rather than the odd store name. This means that if you push Retroarch it will still show up as Retroarch once installed.
 
-It is reccomended that you manually compiled .NET apps though you can technically utilise the `--original` option.
-To get your asp.net cookies you can use partner token which can be found [here](https://github.com/Dantes-Dungeon/PartnerToken).
-```
-Usage:
-  Scarlett-Sideloader [options] <cookie> <file>
+## Support
 
-Arguments:
-  <cookie>  Your asp.net.cookies
-  <file>    The path to your appx, msix, appxbundle and msixbundle
+## Obtaining a developer account
+If you do not already have a developer account, obtaining one is fairly easily and can be done through [Microsoft's official web page](https://partner.microsoft.com/dashboard/registration)
 
-Options:
-  -N, -n, --name <name>                    Name to use for the app store page (if left blank it will be randomly generated).
-  -D, -d, --description <description>      Description to display on store page. [default: a really cool uwp app]
-  -S, -s, --screenshot <screenshot>        Image to use for screenshot on storepage. [default: blank.png]
-  -A, -a, --app                            Install as an app rather than a game (defaults to game).
-  -P, -p, --public                         Push as public instead of defaulting to a private app
-  -E, -e, --emails <emails>                Emails to whitelist, seperated by commas.
-  -G, -g, --groups <groups>                Group names to whitelist, seperated by commas.
-  -O, -o, --original                       Keep package file as original.
-  -F, -f, --forcename                      Force an exact store name by inserting invisible characters.
-  -R, -r, --retryattempts <retryattempts>  Number of times to try uploading to the store before failing [default: 3]
-  --version                                Show version information
-  -?, -h, --help                           Show help and usage information
-```
-## Example
-`dotnet Scarlett-Sideloader.dll -G testgroup -E test@domain.com <cookie (.AspNet.Cookies)> test.appxbundle`
-You can also use partner token to help speed up pulling the needed cookie from partner center.
+You should select the individual account option when signing up.
 
-## Config
-You will need to create a folder in the same dir as the exe called appx packer and add makemsix to that folder. If you have a folder set up for appxpacker already you can just drop in that same folder and it should work.
+You may be able to get a cheaper account by creating an account in another region. This does not currently need a vpn, phone number or verifiable address in the country where you are creating the account. This is not recommended as it may technically constitute fraud. 
+However if you want to go down this route you can find a spreadsheet on what regions are the cheapest [here](https://docs.google.com/spreadsheets/d/1uwcU4AoTbC-8Of3ukC6Mut8_EwvPbrWlL94dbTo2wV4/edit?usp=drivesdk).
+If you are going down this route you should use a fake but real address (such as the address for a McDonalds) from the country you are purchasing as well as making up a fake phone number. The one place where you should use the correct information is on your billing address and billing name.
 
-Ps: This will be my last release for a while
+## Getting your .AspNet.Cookies
+
+For the .AspNet.Cookies you can use [partner token](https://github.com/Dantes-Dungeon/PartnerToken/tree/054d5e0154d32de86e44ed877f575002d5e90f53) or get it manually.
+
+### Manually getting .AspNET.Cookies:
+
+1. Open [Microsoft Partner Centre](https://partner.microsoft.com/en-us/dashboard/apps-and-games/overview)
+![image](https://user-images.githubusercontent.com/26260613/224584000-67b44326-2675-4266-bd9d-8631c8ef23bd.png)
+
+2. Open the developer tools (ctrl-shift-i in edge) and select Application
+![image](https://user-images.githubusercontent.com/26260613/224584093-1a37308c-d023-43a0-98c6-b69bd75f9004.png)
+
+3. Select Cookies 
+![image](https://user-images.githubusercontent.com/26260613/224584165-0e6cdfa1-4d88-4cbf-a2eb-2d69982d2e2d.png)
+
+4. Select Partner Centre in Cookies
+![image](https://user-images.githubusercontent.com/26260613/224584276-bf7ecf31-5331-49e3-a7b3-115a75039058.png)
+
+5. Select .AspNet.Cookies
+![image](https://user-images.githubusercontent.com/26260613/224584356-2c584f74-6b74-4f66-a1d6-7569766d5165.png)
+
+6. Copy the Cookie Value
+![image](https://user-images.githubusercontent.com/26260613/224584477-ed1352c2-7d59-449e-bf27-ad3df38eeb68.png)
+
+7. Paste this into Scarlet Sideloader
+
+![image](https://user-images.githubusercontent.com/26260613/224584513-b322ebc2-6bc6-462e-a12e-ffd38b1b7ce7.png)
+
+
