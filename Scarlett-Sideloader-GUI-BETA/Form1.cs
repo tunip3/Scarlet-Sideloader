@@ -1,84 +1,84 @@
-﻿using System;
-using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
-using System.Net.Http.Json;
-using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
 using System.IO.Compression;
-using System.Xml.Linq;
-using System.Web;
-using System.Diagnostics;
-using HtmlAgilityPack;
+using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
+using System.Web;
+using System.Windows.Forms;
+using System.Xml.Linq;
+using Newtonsoft.Json;
+//using System.Net.Http;
+using HtmlAgilityPack;
 
-namespace Scarlett_Sideloader
+
+namespace Scarlett_Sideloader_GUI_BETA
 {
-    class Program
+    public partial class Form1 : Form
     {
         public static Uri partneruri = new Uri("https://partner.microsoft.com/");
         public static Uri xboxuri = new Uri("https://upload.xboxlive.com/");
         public static Uri xbluri = new Uri("https://xorc.xboxlive.com/");
+        public static Dictionary<String, String> Groups = new Dictionary<string, string>();
+
+        public static string StorePage;
 
         public static HttpClient client;
-
-        static async Task<int> Main(string[] args)
+        public Form1()
         {
-            var cmd = new RootCommand("Scarlett Sideloader - A tool to simplify publishing apps");
-
-            var cookieArgument = new Argument<string>("cookie", "Your asp.net.cookies");
-            cmd.AddArgument(cookieArgument);
-            var fileArgument = new Argument<FileInfo>("file", "The path to your appx, msix, appxbundle and msixbundle");
-            cmd.AddArgument(fileArgument);
-            var nameOption = new Option<string?>(aliases: new String[] { "--name", "-N", "-n" }, description: "Name to use for the app store page (if left blank it will be randomly generated).");
-            cmd.AddOption(nameOption);
-            var descriptionOption = new Option<string>(aliases: new String[] { "--description", "-D", "-d" }, description: "Description to display on store page.", getDefaultValue: () => "a really cool uwp app");
-            cmd.AddOption(descriptionOption);
-            var screenshotOption = new Option<string>(aliases: new String[] { "--screenshot", "-S", "-s" }, description: "Image to use for screenshot on storepage.", getDefaultValue: () => "blank.png");
-            cmd.AddOption(screenshotOption);
-            var appOption = new Option<bool>(aliases: new String[] { "--app", "-A", "-a" }, description: "Install as an app rather than a game (defaults to game).");
-            cmd.AddOption(appOption);
-            var publicOption = new Option<bool>(aliases: new String[] { "--public", "-P", "-p" }, description: "Push as public instead of defaulting to a private app");
-            cmd.AddOption(publicOption);
-            var emailsOption = new Option<string?>(aliases: new String[] { "--emails", "-E", "-e" }, description: "Emails to whitelist, seperated by commas.");
-            cmd.AddOption(emailsOption);
-            var groupsOption = new Option<string?>(aliases: new String[] { "--groups", "-G", "-g" }, description: "Group names to whitelist, seperated by commas.");
-            cmd.AddOption(groupsOption);
-            var originalOption = new Option<bool>(aliases: new String[] { "--original", "-O", "-o" }, description: "Keep package file as original.");
-            cmd.AddOption(originalOption);
-            var forceOption = new Option<bool>(aliases: new String[] { "--forcename", "-F", "-f" }, description: "Force an exact store name by inserting invisible characters.");
-            cmd.AddOption(forceOption);
-            var retryOption = new Option<int>(aliases: new String[] { "--retryattempts", "-R", "-r" }, description: "Number of times to try uploading to the store before failing", getDefaultValue: () => 3);
-            cmd.AddOption(retryOption);
-
-            cmd.SetHandler(
-                (commandArguments) =>
-                {
-                    HandleInput(commandArguments);
-                }, (new CommandArgumentsBinder(cookieArgument, fileArgument, nameOption, descriptionOption, screenshotOption, appOption, publicOption, emailsOption, groupsOption, originalOption, forceOption, retryOption)));
-
-            return await cmd.InvokeAsync(args);
+            InitializeComponent();
+            GroupBoxes.Enabled = false;
         }
 
-        static public void HandleInput(CommandArguments commandArguments)
+        private void button1_Click(object sender, EventArgs e)
         {
-            bool success;
-            do
+            CookieContainer cookieContainer = new CookieContainer();
+            cookieContainer.Add(partneruri, new Cookie(".AspNet.Cookies", aspcookies.Text));
+            HttpClientHandler handler = new HttpClientHandler()
             {
-                success = (SideloaderMain(commandArguments) != null);
-                commandArguments.attempts--;
-            } while (commandArguments.attempts > 0 && !success);
-            if (!success)
+                CookieContainer = cookieContainer,
+                Proxy = new WebProxy("http://localhost:8080", false),
+                UseProxy = false //change to true for debug
+            };
+            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+            handler.ServerCertificateCustomValidationCallback =
+                (httpRequestMessage, cert, cetChain, policyErrors) =>
+                {
+                    return true;
+                };
+            client = new HttpClient(handler);
+
+            GroupBoxes.Items.Clear();
+            Groups.Clear();
+            List<NeededGroupInfo> groups = GetAllGroups();
+            if (groups == null)
             {
-                WriteLine("Reached max number of retry attempts", ConsoleColor.Red);
+                MessageBox.Show("Failed to get groups, token may be invalid", "Login err", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                GroupBoxes.Enabled = false;
+                upload.Enabled = false;
+                return;
             }
+            foreach (NeededGroupInfo group in groups)
+            {
+                GroupBoxes.Items.Add(group.name);
+                Groups.Add(group.name, group.id);
+            }
+            GroupBoxes.Enabled = true;
+            upload.Enabled = true;
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            var openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Filter = "App Files|*.appx;*.appxbundle;*.msix;*.msixbundle;*.appxupload;*.msixupload";
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                appfile.Text = openFileDialog1.FileName;
+            }
+        }
+
+        private void upload_Click(object sender, EventArgs e)
+        {
+            SideloaderMain();
         }
 
         public static bool retryFunction(Func<bool> function, int attempts)
@@ -102,46 +102,28 @@ namespace Scarlett_Sideloader
             }
             return default(T);
         }
-
-        public static void WriteLine(string text, ConsoleColor color)
+        public void WriteLine(string text, ConsoleColor color)
         {
-            Console.ForegroundColor = color;
-            Console.WriteLine(text);
-            Console.ResetColor();
+            if (color == ConsoleColor.Red)
+            {
+                MessageBox.Show(text, "ERR", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            else
+            {
+                statusmessage.Text = text;
+            }
         }
 
-        static public string SideloaderMain(CommandArguments commandArguments)
+        public string SideloaderMain()
         {
-            if (commandArguments.description == null)
-                commandArguments.description = "a really cool uwp app";
-            if (commandArguments.screenshotname == null)
-                commandArguments.screenshotname = "blank.png";
-            string filename = commandArguments.file.Name;
-            string filepath = commandArguments.file.FullName;
-            if ((commandArguments.emails == null) && (commandArguments.groups == null) && !commandArguments.publicapp)
-            {
-                WriteLine("No emails or group provided, defaulting to test@test.com", ConsoleColor.Blue);
-                commandArguments.emails = "test@test.com";
-            }
-            //set aspnet cookie and create http client
-            CookieContainer cookieContainer = new CookieContainer();
-            cookieContainer.Add(partneruri, new Cookie(".AspNet.Cookies", commandArguments.cookie));
-            HttpClientHandler handler = new HttpClientHandler()
-            {
-                CookieContainer = cookieContainer,
-                Proxy = new WebProxy("http://localhost:8080", false),
-                UseProxy = true
-            };
-            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-            handler.ServerCertificateCustomValidationCallback =
-                (httpRequestMessage, cert, cetChain, policyErrors) =>
-                {
-                    return true;
-                };
-            client = new HttpClient(handler);
+            string appdescription = "a really cool uwp app";
+            string appscreenshotname = "blank.png";
+            string filename = Path.GetFileName(appfile.Text);
+            string filepath = appfile.Text;
+            
 
             //pull needed publisher info
-            Console.Write("Pulling publisher info: ");
+            statusmessage.Text = ("Pulling publisher info");
             PublisherInfo publisherinfo = retryFunction<PublisherInfo>(() => GetPublisherInfo(), 3);
             if (publisherinfo == null)
             {
@@ -159,57 +141,12 @@ namespace Scarlett_Sideloader
             String[] grouplist;
             List<NeededGroupInfo> Neededgroups = new List<NeededGroupInfo>();
 
-            if (!commandArguments.publicapp)
+            foreach (var item in GroupBoxes.CheckedItems)
             {
-                //strip whitespace out of groups and emails, not a function due to it only being done twice
-                if (commandArguments.emails != null)
-                {
-                    commandArguments.emails = new string(commandArguments.emails.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
-                    emaillist = commandArguments.emails.Split(",");
-                    string groupname = RandomString(6);
-                    CreateGroupInfo newgroup = new CreateGroupInfo()
-                    {
-                        name = groupname,
-                        members = emaillist
-                    };
-                    Console.Write("Creating new group from emails: ");
-                    NeededGroupInfo createdgroup = retryFunction<NeededGroupInfo>(() => CreateGroup(newgroup), 3);
-                    if (createdgroup == null)
-                    {
-                        WriteLine("Failed to create group, cookie is likely invalid", ConsoleColor.Red);
-                        return null;
-                    }
-                    else
-                    {
-                        WriteLine("Success!", ConsoleColor.Green);
-                    }
-                    Neededgroups.Add(createdgroup);
-                }
-                if (commandArguments.groups != null)
-                {
-                    commandArguments.groups = new string(commandArguments.groups.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
-                    grouplist = commandArguments.groups.Split(",");
-                    Console.Write("Pulling group info: ");
-                    List<NeededGroupInfo> groupsjson = retryFunction<List<NeededGroupInfo>>(() => GetAllGroups(), 3);
-                    if (groupsjson == default(List<NeededGroupInfo>))
-                    {
-
-                        WriteLine("Failed to pull group info, cookie is likely invalid", ConsoleColor.Red);
-                        return null;
-                    }
-                    else
-                    {
-                        WriteLine("Success!", ConsoleColor.Green);
-                    }
-                    foreach (NeededGroupInfo groupInfo in groupsjson)
-                    {
-                        if (grouplist.Contains(groupInfo.name))
-                        {
-                            Neededgroups.Add(groupInfo);
-                        }
-                    }
-                }
+                string test = item.ToString();
+                Neededgroups.Add(new NeededGroupInfo() { id = Groups[test], name = test });
             }
+            
             string appname;
             appname = RandomString(16);
             AppInfo createappinfo = new AppInfo()
@@ -217,11 +154,12 @@ namespace Scarlett_Sideloader
                 Name = appname,
                 features = new AppFeatures()
                 {
-                    game = !commandArguments.app
+                    //game = !commandArguments.app
+                    game = game.Checked
                 }
             };
 
-            Console.Write($"Creating APP with name {appname}: ");
+            statusmessage.Text = ($"Creating APP with name {appname}");
             NeededAppInfo createdappinfo = retryFunction<NeededAppInfo>(() => CreateApp(createappinfo), 3);
             if (createdappinfo == null)
             {
@@ -233,13 +171,13 @@ namespace Scarlett_Sideloader
                 WriteLine("Success!", ConsoleColor.Green);
             }
 
-            if (commandArguments.name != null)
+            /*if (commandArguments.name != null)
             {
 
                 bool succeeded = false;
                 while (!succeeded)
                 {
-                    Console.Write($"Checking availability of {commandArguments.name}: ");
+                    statusmessage.Text = ($"Checking availability of {commandArguments.name}");
                     bool? available = retryFunction<bool?>(() => CheckAvailability(commandArguments.name), 3);
                     if (available == default(bool?))
                     {
@@ -255,7 +193,7 @@ namespace Scarlett_Sideloader
                     {
                         if (commandArguments.force)
                         {
-                            WriteLine($"Name was not available, adjusting and trying again: ", ConsoleColor.Yellow);
+                            WriteLine($"Name was not available, adjusting and trying again", ConsoleColor.Yellow);
                             commandArguments.name = RandomInvisibleString(3) + commandArguments.name + RandomInvisibleString(3);
                         }
                         else
@@ -265,7 +203,7 @@ namespace Scarlett_Sideloader
                         }
                     }
                 }
-                Console.Write($"Reserving app name ({commandArguments.name}): ");
+                statusmessage.Text = ($"Reserving app name ({commandArguments.name})");
                 if (retryFunction(() => ReserveAppName(createdappinfo, commandArguments.name), 3))
                 {
                     WriteLine("Success!", ConsoleColor.Green);
@@ -277,7 +215,7 @@ namespace Scarlett_Sideloader
                 }
 
                 /*Console.ForegroundColor = ConsoleColor.White;
-                Console.Write($"Switching app name to {commandArguments.name}: ");
+                statusmessage.Text = ($"Switching app name to {commandArguments.name}");
                 if (SwitchAppName(createdappinfo, commandArguments.name))
                 {
                     WriteLine("Success!", ConsoleColor.Green);
@@ -285,14 +223,14 @@ namespace Scarlett_Sideloader
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Failed to switch App Name");
+                    statusmessage.Text = Line("Failed to switch App Name");
                     return;
                 }*/
-
+                /*
                 string currentname = appname;
                 appname = commandArguments.name;
 
-                Console.Write($"Deleting temporary app name: ");
+                statusmessage.Text = ($"Deleting temporary app name");
                 if (retryFunction(() => DeleteAppName(createdappinfo, currentname), 3))
                 {
                     WriteLine("Success!", ConsoleColor.Green);
@@ -302,8 +240,9 @@ namespace Scarlett_Sideloader
                     WriteLine("Failed to delete Temporary App Name", ConsoleColor.Yellow);
                 }
             }
-
-            Console.Write($"Creating submission for {appname}: ");
+                */
+            
+            statusmessage.Text = ($"Creating submission for {appname}");
             if (!retryFunction(() => CreateSubmission(createdappinfo), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
@@ -320,7 +259,7 @@ namespace Scarlett_Sideloader
                 groupids.Add(groupinfo.id);
             }
 
-            Console.Write($"Getting submission info for {appname}: ");
+            statusmessage.Text = ($"Getting submission info for {appname}");
             List<NeededSubmissionInfo> returnedsubmissions = GetSubmissionInfo(createdappinfo);
             if (returnedsubmissions != null)
             {
@@ -330,11 +269,6 @@ namespace Scarlett_Sideloader
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
-            }
-
-            if (commandArguments.name != null)
-            {
-                appname = commandArguments.name;
             }
 
             NeededSubmissionInfo neededsubmissioninfo = returnedsubmissions[0];
@@ -347,13 +281,13 @@ namespace Scarlett_Sideloader
                 PublisherId = publisherinfo.sellerId,
                 Visibility = new APPVisibility()
                 {
-                    GroupIds = commandArguments.publicapp ? new List<string>() : groupids,
-                    DistributionMode = commandArguments.publicapp ? "Hidden" : "Public",
-                    Audience = commandArguments.publicapp ? "Public" : "PrivateBeta"
+                    GroupIds = groupids,
+                    DistributionMode = "Public",
+                    Audience = "PrivateBeta"
                 }
             };
 
-            Console.Write($"Setting Pricing and Availibility for {appname}: ");
+            statusmessage.Text = ($"Setting Pricing and Availibility for {appname}");
             if (retryFunction(() => SetAvailibility(storeinfo, neededsubmissioninfo), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
@@ -364,7 +298,7 @@ namespace Scarlett_Sideloader
                 return null;
             }
 
-            Console.Write($"Getting identity info for {appname}: ");
+            statusmessage.Text = ($"Getting identity info for {appname}");
 
             Identity identity = GetIdentityInfo(createdappinfo);
             if (identity != null)
@@ -379,7 +313,7 @@ namespace Scarlett_Sideloader
 
             //create age rating application
             AgeRatingApplication ageratingapplication = new AgeRatingApplication() { product = new Product() { alias = appname } };
-            Console.Write($"Setting Age Ratings for {appname}: ");
+            statusmessage.Text = ($"Setting Age Ratings for {appname}");
             if (retryFunction(() => SetAgeRatings(createdappinfo, neededsubmissioninfo, ageratingapplication), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
@@ -392,7 +326,7 @@ namespace Scarlett_Sideloader
 
 
             //get needed verification token
-            Console.Write("Getting request verifictation token: ");
+            statusmessage.Text = ("Getting request verifictation token");
             string requestverificationtoken = GetRequestToken(createdappinfo, neededsubmissioninfo);
             if (requestverificationtoken == null)
             {
@@ -400,10 +334,10 @@ namespace Scarlett_Sideloader
                 return null;
             }
             WriteLine("Success!", ConsoleColor.Green);
-            
+
             //set properties
-            Console.Write($"Setting properties for {appname}: ");
-            if (retryFunction(() => SetProperties(createdappinfo, neededsubmissioninfo, requestverificationtoken, commandArguments.app), 3))
+            statusmessage.Text = ($"Setting properties for {appname}");
+            if (retryFunction(() => SetProperties(createdappinfo, neededsubmissioninfo, requestverificationtoken, !game.Checked), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
             }
@@ -413,10 +347,10 @@ namespace Scarlett_Sideloader
                 return null;
             }
 
-            if (!commandArguments.app)
+            if (game.Checked)
             {
                 //get xbl auth token
-                Console.Write($"Getting Xbox Live Auth Token for {appname}: ");
+                statusmessage.Text = ($"Getting Xbox Live Auth Token for {appname}");
                 ReturnedAuthInfo returnedauthinfo = GetXBLAuthToken(createdappinfo, "CERT CERT.DEBUG RETAIL ALL HIDDEN HISTORY");
                 if (returnedauthinfo == null)
                 {
@@ -429,7 +363,7 @@ namespace Scarlett_Sideloader
                 }
 
                 //get xblids
-                Console.Write($"Getting Xbox Live IDs for {appname}: ");
+                statusmessage.Text = ($"Getting Xbox Live IDs for {appname}");
                 GetXBLids(createdappinfo, HttpMethod.Options, null);
                 XBLids xblids = GetXBLids(createdappinfo, HttpMethod.Get, returnedauthinfo);
                 if (xblids == null)
@@ -442,7 +376,7 @@ namespace Scarlett_Sideloader
                     WriteLine("Success!", ConsoleColor.Green);
                 }
                 //enable xbl for app
-                Console.Write($"Enabling Xbox Live for {appname}: ");
+                statusmessage.Text = ($"Enabling Xbox Live for {appname}");
                 EnableXBL(xblids, HttpMethod.Options, null, null);
                 if (retryFunction(() => EnableXBL(xblids, HttpMethod.Post, returnedauthinfo, appname), 3))
                 {
@@ -455,7 +389,7 @@ namespace Scarlett_Sideloader
                 }
 
                 //get acc info
-                Console.Write($"Getting acc info: ");
+                statusmessage.Text = ($"Getting acc info");
                 GetAccountInfo(xblids, HttpMethod.Options, null);
                 XBLaccInfo xblaccinfo = GetAccountInfo(xblids, HttpMethod.Get, returnedauthinfo);
                 if (xblaccinfo != null)
@@ -472,7 +406,7 @@ namespace Scarlett_Sideloader
                 ReturnedAuthInfo returnedsandboxauthinfo = GetXBLAuthToken(createdappinfo, $"{xblaccinfo.OpenTierSandboxId} RETAIL");
 
                 //send validation request
-                Console.Write($"Sending validation request: ");
+                statusmessage.Text = ($"Sending validation request");
                 ValidateSandbox(xblids, HttpMethod.Options, null, xblaccinfo);
                 string sourceversion = ValidateSandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo);
                 if (sourceversion != null)
@@ -486,7 +420,7 @@ namespace Scarlett_Sideloader
                 }
 
                 //send copy request
-                Console.Write($"Copying {xblaccinfo.OpenTierSandboxId} SANDBOX to RETAIL: ");
+                statusmessage.Text = ($"Copying {xblaccinfo.OpenTierSandboxId} SANDBOX to RETAIL");
                 CopySandbox(xblids, HttpMethod.Options, null, xblaccinfo);
                 if (retryFunction(() => CopySandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo), 3))
                 {
@@ -499,7 +433,7 @@ namespace Scarlett_Sideloader
                 }
 
                 //send publish request
-                Console.Write($"Publishing Sandbox: ");
+                statusmessage.Text = ($"Publishing Sandbox");
                 PublishSandbox(xblids, HttpMethod.Options, null, xblaccinfo, sourceversion);
                 if (retryFunction(() => PublishSandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo, sourceversion), 3))
                 {
@@ -512,21 +446,22 @@ namespace Scarlett_Sideloader
                 }
             }
             //patch the package
-            if (!commandArguments.original)
+            if (true)
             {
                 bool uploadfile = false;
-                Console.Write($"Starting to patch {filename}: ");
-                if ((commandArguments.file.Extension == ".appxbundle") || (commandArguments.file.Extension == ".msixbundle"))
+                statusmessage.Text = ($"Starting to patch {filename}");
+                FileInfo fileInfo = new FileInfo(filepath);
+                if ((fileInfo.Extension == ".appxbundle") || (fileInfo.Extension == ".msixbundle"))
                 {
-                    
+
                     WriteLine("Detected Bundle Package", ConsoleColor.Green);
-                    Console.Write($"Extracting {filename}: ");
+                    statusmessage.Text = ($"Extracting {filename}");
                     string bundlepath = Path.Join(Path.GetTempPath(), "bundle");
                     if (Directory.Exists(bundlepath))
                     {
                         Directory.Delete(bundlepath, true);
                     }
-                    ZipFile.ExtractToDirectory(commandArguments.file.FullName, bundlepath, true);
+                    ZipFile.ExtractToDirectory(fileInfo.FullName, bundlepath, true);
                     XDocument AppxBundleManifest = XDocument.Load(Path.Join(bundlepath, "AppxMetadata\\AppxBundleManifest.xml"));
                     XNamespace ns = AppxBundleManifest.Root.GetDefaultNamespace();
                     XElement packages = AppxBundleManifest.Root.Element(XName.Get("Packages", ns.NamespaceName));
@@ -551,12 +486,12 @@ namespace Scarlett_Sideloader
                     }
                     WriteLine("Success!", ConsoleColor.Green);
                 }
-                else if ((commandArguments.file.Extension == ".appxupload") || (commandArguments.file.Extension == ".msixupload"))
+                else if ((fileInfo.Extension == ".appxupload") || (fileInfo.Extension == ".msixupload"))
                 {
                     WriteLine("Detected upload file (please use the --original flag in future)", ConsoleColor.Yellow);
                     uploadfile = true;
                 }
-                else if ((commandArguments.file.Extension == ".appx") || (commandArguments.file.Extension == ".msix"))
+                else if ((fileInfo.Extension == ".appx") || (fileInfo.Extension == ".msix"))
                 {
                     WriteLine("Detected package file", ConsoleColor.Green);
                 }
@@ -570,7 +505,7 @@ namespace Scarlett_Sideloader
                 if (!uploadfile)
                 {
                     //patch appxmanifest
-                    Console.Write($"Patching appxmanifest for {filename}: ");
+                    statusmessage.Text = ($"Patching appxmanifest for {filename}");
                     string packagepath = Path.Join(Path.GetTempPath(), "package", $"{System.IO.Path.GetFileNameWithoutExtension(filename)}");
                     //clear out package path too
                     if (Directory.Exists(packagepath))
@@ -593,7 +528,7 @@ namespace Scarlett_Sideloader
                     publisherdisplayname.Value = identity.PublisherDisplayName;
                     AppxManifest.Save(Path.Join(packagepath, "AppxManifest.xml"));
                     WriteLine("Success!", ConsoleColor.Green);
-                    Console.Write($"Generating patched {filename}: ");
+                    statusmessage.Text = ($"Generating patched {filename}");
                     //if we are on windows and the exe or if we aren't and the binary can't be found
                     if ((!File.Exists(Path.Join(Directory.GetCurrentDirectory(), "MakeMsix", "MakeMsix.exe")) && System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) || (!File.Exists(Path.Join(Directory.GetCurrentDirectory(), "makemsix", "makemsix")) && !System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)))
                     {
@@ -619,7 +554,7 @@ namespace Scarlett_Sideloader
                         WriteLine("Failed", ConsoleColor.Red);
                         return null;
                     }
-                    Console.Write($"Generating appxsym for {filename}: ");
+                    statusmessage.Text = ($"Generating appxsym for {filename}");
                     string appxsymfilename = $"{Path.GetFileNameWithoutExtension(filepath)}.appxsym";
                     string appxsympath = Path.Join(Path.GetTempPath(), appxsymfilename);
                     if (File.Exists(appxsympath))
@@ -643,7 +578,7 @@ namespace Scarlett_Sideloader
                             stream.CopyTo(entryStream);
                     }
                     WriteLine("Success!", ConsoleColor.Green);
-                    Console.Write($"Generating appxupload from {filename}: ");
+                    statusmessage.Text = ($"Generating appxupload from {filename}");
                     string appxuploadfilename = $"{Path.GetFileNameWithoutExtension(filepath)}.appxupload";
                     string appxuploadpath = Path.Join(Path.GetTempPath(), appxuploadfilename);
                     if (File.Exists(appxuploadpath))
@@ -680,7 +615,7 @@ namespace Scarlett_Sideloader
                     WriteLine("Success!", ConsoleColor.Green);
                 }
             }
-            Console.Write($"Getting upload info for {appname}: ");
+            statusmessage.Text = ($"Getting upload info for {appname}");
             CreateUploadInfo createuploadinfo = new CreateUploadInfo() { FileName = filename };
             NeededUploadInfo neededuploadinfo = GetUploadInfo(createuploadinfo, neededsubmissioninfo);
             if (neededuploadinfo != null)
@@ -694,7 +629,7 @@ namespace Scarlett_Sideloader
 
             string token = HttpUtility.ParseQueryString(new Uri(neededuploadinfo.UploadInfo.SasUrl).Query).Get("token");
 
-            Console.Write($"Setting Metadata for {appname}: ");
+            statusmessage.Text = ($"Setting Metadata for {appname}");
 
             //read package as a filestream
             FileStream packagestream = new FileStream(filepath, FileMode.Open, FileAccess.Read);
@@ -740,18 +675,18 @@ namespace Scarlett_Sideloader
             decimal chunksnum = packagestream.Length / chunksize;
             int chunks = Convert.ToInt32(Math.Ceiling(chunksnum)) + 1;
 
-            
+
             for (int i = 0; i < chunks; i++)
             {
                 int chunknum = i + 1;
-                Console.Write($"Setting metadata for chunk number {chunknum} of {chunks}: ");
+                statusmessage.Text = ($"Setting metadata for chunk number {chunknum} of {chunks}");
                 if (!UploadChunk(token, chunknum, null, neededuploadinfo, HttpMethod.Options))
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
                 }
                 WriteLine("Success!", ConsoleColor.Green);
-                
+
             }
 
             for (int i = 0; i < chunks; i++)
@@ -761,7 +696,7 @@ namespace Scarlett_Sideloader
                 byte[] buffer = new byte[toRead];
                 packagestream.Read(buffer, 0, buffer.Length);
                 int chunknum = i + 1;
-                Console.Write($"Uploading chunk number {chunknum} of {chunks}: ");
+                statusmessage.Text = ($"Uploading chunk number {chunknum} of {chunks}");
                 if (retryFunction(() => UploadChunk(token, chunknum, buffer, neededuploadinfo, HttpMethod.Post), 3))
                 {
                     WriteLine("Success!", ConsoleColor.Green);
@@ -773,7 +708,7 @@ namespace Scarlett_Sideloader
                 }
             }
 
-            Console.Write($"Marking upload as finished: ");
+            statusmessage.Text = ($"Marking upload as finished");
 
             if (!retryFunction(() => UploadFinished(token, neededuploadinfo, HttpMethod.Options), 3))
             {
@@ -786,12 +721,12 @@ namespace Scarlett_Sideloader
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
             }
-            
+
             WriteLine("Success!", ConsoleColor.Green);
 
             CommitalInfo commitalinfo = new CommitalInfo() { Id = neededuploadinfo.Id };
 
-            Console.Write($"Commiting upload: ");
+            statusmessage.Text = ($"Commiting upload");
             if (retryFunction(() => CommitUpload(commitalinfo), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
@@ -802,7 +737,7 @@ namespace Scarlett_Sideloader
                 return null;
             }
 
-            Console.Write($"Set target platforms: ");
+            statusmessage.Text = ($"Set target platforms");
 
             if (retryFunction(() => SetPlatforms(neededsubmissioninfo), 3))
             {
@@ -815,7 +750,7 @@ namespace Scarlett_Sideloader
             }
 
             //set languages
-            Console.Write($"Getting manage languages request verification token: ");
+            statusmessage.Text = ($"Getting manage languages request verification token");
             //get needed verification token
             string managelanguagerequestverificationtoken = GetManageLanguagesRequestToken(createdappinfo, neededsubmissioninfo);
             if (managelanguagerequestverificationtoken == null)
@@ -826,7 +761,7 @@ namespace Scarlett_Sideloader
 
             WriteLine("Success!", ConsoleColor.Green);
 
-            Console.Write($"Setting languages for {appname}: ");
+            statusmessage.Text = ($"Setting languages for {appname}");
             if (SetLanguages(createdappinfo, neededsubmissioninfo, managelanguagerequestverificationtoken))
             {
                 WriteLine("Success!", ConsoleColor.Green);
@@ -838,7 +773,7 @@ namespace Scarlett_Sideloader
             }
 
             //get listing info
-            Console.Write($"Getting listing info {appname}: ");
+            statusmessage.Text = ($"Getting listing info {appname}");
 
             //get needed listing info
             ListingInfo listinginfo = GetListingInfo(createdappinfo, neededsubmissioninfo);
@@ -853,9 +788,9 @@ namespace Scarlett_Sideloader
             }
 
             //set listing
-            Console.Write($"Setting languages for {appname}: ");
+            statusmessage.Text = ($"Setting languages for {appname}");
 
-            if (retryFunction(() => SetListing(createdappinfo, neededsubmissioninfo, listinginfo, appname, commandArguments.description), 3))
+            if (retryFunction(() => SetListing(createdappinfo, neededsubmissioninfo, listinginfo, appname, appdescription), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
             }
@@ -866,8 +801,8 @@ namespace Scarlett_Sideloader
             }
 
             //upload screenshot
-            Console.Write($"Adding screenshot for {appname}: ");
-            if (retryFunction(() => UploadScreenShot(neededsubmissioninfo, createdappinfo, HttpMethod.Post, listinginfo, commandArguments.screenshotname), 3))
+            statusmessage.Text = ($"Adding screenshot for {appname}");
+            if (retryFunction(() => UploadScreenShot(neededsubmissioninfo, createdappinfo, HttpMethod.Post, listinginfo, appscreenshotname), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
             }
@@ -878,7 +813,7 @@ namespace Scarlett_Sideloader
             }
 
             //push to store
-            Console.Write($"submitting {appname} to store: ");
+            statusmessage.Text = ($"submitting {appname} to store");
             if (retryFunction(() => SubmitToStore(neededsubmissioninfo, createdappinfo), 3))
             {
                 WriteLine("Success!", ConsoleColor.Green);
@@ -889,13 +824,17 @@ namespace Scarlett_Sideloader
                 return null;
             }
 
-            
-            WriteLine("SUCCESS!!!", ConsoleColor.Magenta);
-            Console.WriteLine($"You can observe the progress here:");
-            WriteLine($"https://partner.microsoft.com/en-us/dashboard/products/{createdappinfo.bigId}/submissions/{neededsubmissioninfo.id}/CertificationStatus\n", ConsoleColor.Blue);
-            Console.WriteLine("Once the app passes certification you can use the following deeplink to install the app:");
-            WriteLine($"ms-windows-store://pdp/?productid={createdappinfo.bigId}", ConsoleColor.Blue);
-            
+
+            statusmessage.Text = ("SUCCESS!!!");
+
+            MessageBox.Show("You can observe the progress here " + 
+                $"https://partner.microsoft.com/en-us/dashboard/products/{createdappinfo.bigId}/submissions/{neededsubmissioninfo.id}/CertificationStatus\n" +
+                "Once the app passes certification you can use the following deeplink to install the app: " +
+                $"ms-windows-store://pdp/?productid={createdappinfo.bigId}");
+
+            linkLabel1.Text = "App Certification Status";
+            linkLabel1.LinkVisited = false;
+            StorePage = $"https://partner.microsoft.com/en-us/dashboard/products/{createdappinfo.bigId}/submissions/{neededsubmissioninfo.id}/CertificationStatus";
             return createdappinfo.bigId;
         }
 
@@ -927,7 +866,7 @@ namespace Scarlett_Sideloader
                 var result = response.Result.Content.ReadAsStringAsync();
                 result.Wait();
                 string responseresult = result.Result;
-                HtmlDocument pageDocument = new HtmlDocument();
+                HtmlAgilityPack.HtmlDocument pageDocument = new HtmlAgilityPack.HtmlDocument();
                 pageDocument.LoadHtml(responseresult);
                 var node = pageDocument.DocumentNode.SelectSingleNode("//*[@name=\"__RequestVerificationToken\"]");
                 string token = node.Attributes["Value"].Value;
@@ -954,7 +893,7 @@ namespace Scarlett_Sideloader
                 var result = response.Result.Content.ReadAsStringAsync();
                 result.Wait();
                 string responseresult = result.Result;
-                HtmlDocument pageDocument = new HtmlDocument();
+                HtmlAgilityPack.HtmlDocument pageDocument = new HtmlAgilityPack.HtmlDocument();
                 pageDocument.LoadHtml(responseresult);
                 var node = pageDocument.DocumentNode.SelectSingleNode("//*[@name=\"__RequestVerificationToken\"]");
                 string token = node.Attributes["Value"].Value;
@@ -978,7 +917,7 @@ namespace Scarlett_Sideloader
                 var result = response.Result.Content.ReadAsStringAsync();
                 result.Wait();
                 string responseresult = result.Result;
-                HtmlDocument pageDocument = new HtmlDocument();
+                HtmlAgilityPack.HtmlDocument pageDocument = new HtmlAgilityPack.HtmlDocument();
                 pageDocument.LoadHtml(responseresult);
                 ListingInfo listinginfo = new ListingInfo();
                 var node = pageDocument.DocumentNode.SelectSingleNode("//*[@name=\"__RequestVerificationToken\"]");
@@ -2811,7 +2750,8 @@ namespace Scarlett_Sideloader
                         response.Wait();
                         responseresult = response.Result.Content.ReadAsStringAsync().Result;
                         responseobject = JsonConvert.DeserializeObject<TempValidateClass>(responseresult);
-                        status = responseobject.Status;
+                        if (responseresult != null)
+                            status = responseobject.Status;
                     }
                     return responseobject.SourceVersion;
                 }
@@ -2960,7 +2900,7 @@ namespace Scarlett_Sideloader
             }
         }
 
-        static NeededGroupInfo CreateGroup(CreateGroupInfo creategroupinfo)
+        public NeededGroupInfo CreateGroup(CreateGroupInfo creategroupinfo)
         {
             var stringPayload = JsonConvert.SerializeObject(creategroupinfo);
             var content = new StringContent(stringPayload, System.Text.Encoding.UTF8, "application/json");
@@ -2974,7 +2914,7 @@ namespace Scarlett_Sideloader
             }
             else
             {
-                Console.WriteLine(response.Result.Content.ReadAsStringAsync().Result);
+                statusmessage.Text = response.Result.Content.ReadAsStringAsync().Result;
                 return null;
             }
         }
@@ -3487,5 +3427,31 @@ namespace Scarlett_Sideloader
             return stream;
         }
 
+        private void appfile_TextChanged(object sender, EventArgs e)
+        {
+           
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            linkLabel1.LinkVisited = true;
+            if (StorePage != null)
+                Process.Start(new ProcessStartInfo(StorePage) { UseShellExecute = true });
+        }
+
+        private void game_CheckedChanged(object sender, EventArgs e)
+        {
+            app.Checked = !game.Checked;
+        }
+
+        private void app_CheckedChanged(object sender, EventArgs e)
+        {
+            app.Checked = !game.Checked;
+        }
     }
 }

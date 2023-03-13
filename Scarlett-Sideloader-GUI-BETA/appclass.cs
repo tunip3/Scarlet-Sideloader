@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Scarlett_Sideloader
+namespace Scarlett_Sideloader_GUI_BETA
 {
     public class Language
     {
