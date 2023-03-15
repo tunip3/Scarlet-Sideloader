@@ -118,8 +118,9 @@ namespace Scarlett_Sideloader_GUI_BETA
         {
             string appdescription = "a really cool uwp app";
             string appscreenshotname = "blank.png";
-            string filename = Path.GetFileName(appfile.Text);
             string filepath = appfile.Text;
+            string filename = Path.GetFileName(appfile.Text);
+            
             
 
             //pull needed publisher info
