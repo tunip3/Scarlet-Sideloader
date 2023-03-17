@@ -75,10 +75,10 @@ namespace Scarlett_Sideloader_GUI_BETA
                 appfile.Text = openFileDialog1.FileName;
             }
         }
-
+        
         private void upload_Click(object sender, EventArgs e)
         {
-            SideloaderMain();
+            SideloaderMain(RandomString(16), appfile.Text, RandomString(32), "blank.png");
         }
 
         public static bool retryFunction(Func<bool> function, int attempts)
@@ -108,20 +108,19 @@ namespace Scarlett_Sideloader_GUI_BETA
             {
                 MessageBox.Show(text, "ERR", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            else if (color == ConsoleColor.Green)
+            { 
+                //skip - no point just writing success over and over again
+            }
             else
             {
                 statusmessage.Text = text;
             }
         }
 
-        public string SideloaderMain()
+        public string SideloaderMain(string appname, string filepath, string appdescription, string appscreenshotname)
         {
-            string appdescription = "a really cool uwp app";
-            string appscreenshotname = "blank.png";
-            string filepath = appfile.Text;
-            string filename = Path.GetFileName(appfile.Text);
-            
-            
+            string filename = Path.GetFileName(filepath);
 
             //pull needed publisher info
             statusmessage.Text = ("Pulling publisher info");
@@ -131,14 +130,9 @@ namespace Scarlett_Sideloader_GUI_BETA
                 WriteLine("Failed to pull publisher info, cookie is likely invalid", ConsoleColor.Red);
                 return null;
             }
-            else
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
 
             //get all needed group info
             //create empty lists of groups and emails
-            String[] emaillist;
             String[] grouplist;
             List<NeededGroupInfo> Neededgroups = new List<NeededGroupInfo>();
 
@@ -148,8 +142,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                 Neededgroups.Add(new NeededGroupInfo() { id = Groups[test], name = test });
             }
             
-            string appname;
-            appname = RandomString(16);
             AppInfo createappinfo = new AppInfo()
             {
                 Name = appname,
@@ -166,10 +158,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             {
                 WriteLine("Failed to create app, name is likely already taken", ConsoleColor.Red);
                 return null;
-            }
-            else
-            {
-                WriteLine("Success!", ConsoleColor.Green);
             }
 
             /*if (commandArguments.name != null)
@@ -249,10 +237,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
             }
-            else
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
 
             List<string> groupids = new List<string>();
             foreach (NeededGroupInfo groupinfo in Neededgroups)
@@ -262,11 +246,7 @@ namespace Scarlett_Sideloader_GUI_BETA
 
             statusmessage.Text = ($"Getting submission info for {appname}");
             List<NeededSubmissionInfo> returnedsubmissions = GetSubmissionInfo(createdappinfo);
-            if (returnedsubmissions != null)
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (returnedsubmissions == null)
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -289,11 +269,7 @@ namespace Scarlett_Sideloader_GUI_BETA
             };
 
             statusmessage.Text = ($"Setting Pricing and Availibility for {appname}");
-            if (retryFunction(() => SetAvailibility(storeinfo, neededsubmissioninfo), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => SetAvailibility(storeinfo, neededsubmissioninfo), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -302,11 +278,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             statusmessage.Text = ($"Getting identity info for {appname}");
 
             Identity identity = GetIdentityInfo(createdappinfo);
-            if (identity != null)
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -315,11 +286,7 @@ namespace Scarlett_Sideloader_GUI_BETA
             //create age rating application
             AgeRatingApplication ageratingapplication = new AgeRatingApplication() { product = new Product() { alias = appname } };
             statusmessage.Text = ($"Setting Age Ratings for {appname}");
-            if (retryFunction(() => SetAgeRatings(createdappinfo, neededsubmissioninfo, ageratingapplication), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => SetAgeRatings(createdappinfo, neededsubmissioninfo, ageratingapplication), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -334,15 +301,10 @@ namespace Scarlett_Sideloader_GUI_BETA
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
             }
-            WriteLine("Success!", ConsoleColor.Green);
 
             //set properties
             statusmessage.Text = ($"Setting properties for {appname}");
-            if (retryFunction(() => SetProperties(createdappinfo, neededsubmissioninfo, requestverificationtoken, !game.Checked), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => SetProperties(createdappinfo, neededsubmissioninfo, requestverificationtoken, !game.Checked), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -357,10 +319,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
-                }
-                else
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
                 }
 
                 //get xblids
@@ -379,11 +337,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                 //enable xbl for app
                 statusmessage.Text = ($"Enabling Xbox Live for {appname}");
                 EnableXBL(xblids, HttpMethod.Options, null, null);
-                if (retryFunction(() => EnableXBL(xblids, HttpMethod.Post, returnedauthinfo, appname), 3))
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
-                else
+                if (!retryFunction(() => EnableXBL(xblids, HttpMethod.Post, returnedauthinfo, appname), 3))
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
@@ -393,11 +347,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                 statusmessage.Text = ($"Getting acc info");
                 GetAccountInfo(xblids, HttpMethod.Options, null);
                 XBLaccInfo xblaccinfo = GetAccountInfo(xblids, HttpMethod.Get, returnedauthinfo);
-                if (xblaccinfo != null)
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
-                else
+                if (xblaccinfo == null)
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
@@ -410,11 +360,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                 statusmessage.Text = ($"Sending validation request");
                 ValidateSandbox(xblids, HttpMethod.Options, null, xblaccinfo);
                 string sourceversion = ValidateSandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo);
-                if (sourceversion != null)
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
-                else
+                if (sourceversion == null)
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
@@ -423,11 +369,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                 //send copy request
                 statusmessage.Text = ($"Copying {xblaccinfo.OpenTierSandboxId} SANDBOX to RETAIL");
                 CopySandbox(xblids, HttpMethod.Options, null, xblaccinfo);
-                if (retryFunction(() => CopySandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo), 3))
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
-                else
+                if (!retryFunction(() => CopySandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo), 3))
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
@@ -436,11 +378,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                 //send publish request
                 statusmessage.Text = ($"Publishing Sandbox");
                 PublishSandbox(xblids, HttpMethod.Options, null, xblaccinfo, sourceversion);
-                if (retryFunction(() => PublishSandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo, sourceversion), 3))
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
-                else
+                if (!retryFunction(() => PublishSandbox(xblids, HttpMethod.Post, returnedsandboxauthinfo, xblaccinfo, sourceversion), 3))
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
@@ -548,7 +486,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                     {
                         filepath = appxpath;
                         filename = $"Patched-{filename}";
-                        WriteLine("Success!", ConsoleColor.Green);
                     }
                     else
                     {
@@ -578,7 +515,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                         using (var entryStream = entry.Open()) // copy the stream into the entry
                             stream.CopyTo(entryStream);
                     }
-                    WriteLine("Success!", ConsoleColor.Green);
                     statusmessage.Text = ($"Generating appxupload from {filename}");
                     string appxuploadfilename = $"{Path.GetFileNameWithoutExtension(filepath)}.appxupload";
                     string appxuploadpath = Path.Join(Path.GetTempPath(), appxuploadfilename);
@@ -613,17 +549,12 @@ namespace Scarlett_Sideloader_GUI_BETA
                     filepath = appxuploadpath;
                     filename = appxuploadfilename;
 
-                    WriteLine("Success!", ConsoleColor.Green);
                 }
             }
             statusmessage.Text = ($"Getting upload info for {appname}");
             CreateUploadInfo createuploadinfo = new CreateUploadInfo() { FileName = filename };
             NeededUploadInfo neededuploadinfo = GetUploadInfo(createuploadinfo, neededsubmissioninfo);
-            if (neededuploadinfo != null)
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (neededuploadinfo == null)
             {
                 WriteLine("Failed", ConsoleColor.Red);
             }
@@ -668,8 +599,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             string responseresult = response.Result.Content.ReadAsStringAsync().Result;
             neededmetadata = JsonConvert.DeserializeObject<NeededMetadata>(responseresult);
 
-            WriteLine("Success!", ConsoleColor.Green);
-
             //chunksize in bytes
             int chunksize = Convert.ToInt32(neededmetadata.ChunkSize);
             //number of chunks
@@ -686,7 +615,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
                 }
-                WriteLine("Success!", ConsoleColor.Green);
 
             }
 
@@ -698,11 +626,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                 packagestream.Read(buffer, 0, buffer.Length);
                 int chunknum = i + 1;
                 statusmessage.Text = ($"Uploading chunk number {chunknum} of {chunks}");
-                if (retryFunction(() => UploadChunk(token, chunknum, buffer, neededuploadinfo, HttpMethod.Post), 3))
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
-                else
+                if (!retryFunction(() => UploadChunk(token, chunknum, buffer, neededuploadinfo, HttpMethod.Post), 3))
                 {
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
@@ -723,16 +647,11 @@ namespace Scarlett_Sideloader_GUI_BETA
                 return null;
             }
 
-            WriteLine("Success!", ConsoleColor.Green);
-
+            
             CommitalInfo commitalinfo = new CommitalInfo() { Id = neededuploadinfo.Id };
 
             statusmessage.Text = ($"Commiting upload");
-            if (retryFunction(() => CommitUpload(commitalinfo), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => CommitUpload(commitalinfo), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -740,11 +659,7 @@ namespace Scarlett_Sideloader_GUI_BETA
 
             statusmessage.Text = ($"Set target platforms");
 
-            if (retryFunction(() => SetPlatforms(neededsubmissioninfo), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => SetPlatforms(neededsubmissioninfo), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -760,14 +675,8 @@ namespace Scarlett_Sideloader_GUI_BETA
                 return null;
             }
 
-            WriteLine("Success!", ConsoleColor.Green);
-
             statusmessage.Text = ($"Setting languages for {appname}");
-            if (SetLanguages(createdappinfo, neededsubmissioninfo, managelanguagerequestverificationtoken))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!SetLanguages(createdappinfo, neededsubmissioninfo, managelanguagerequestverificationtoken))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -791,11 +700,7 @@ namespace Scarlett_Sideloader_GUI_BETA
             //set listing
             statusmessage.Text = ($"Setting languages for {appname}");
 
-            if (retryFunction(() => SetListing(createdappinfo, neededsubmissioninfo, listinginfo, appname, appdescription), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => SetListing(createdappinfo, neededsubmissioninfo, listinginfo, appname, appdescription), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -803,11 +708,7 @@ namespace Scarlett_Sideloader_GUI_BETA
 
             //upload screenshot
             statusmessage.Text = ($"Adding screenshot for {appname}");
-            if (retryFunction(() => UploadScreenShot(neededsubmissioninfo, createdappinfo, HttpMethod.Post, listinginfo, appscreenshotname), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => UploadScreenShot(neededsubmissioninfo, createdappinfo, HttpMethod.Post, listinginfo, appscreenshotname), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -815,11 +716,7 @@ namespace Scarlett_Sideloader_GUI_BETA
 
             //push to store
             statusmessage.Text = ($"submitting {appname} to store");
-            if (retryFunction(() => SubmitToStore(neededsubmissioninfo, createdappinfo), 3))
-            {
-                WriteLine("Success!", ConsoleColor.Green);
-            }
-            else
+            if (!retryFunction(() => SubmitToStore(neededsubmissioninfo, createdappinfo), 3))
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
