@@ -23,6 +23,8 @@ namespace Scarlett_Sideloader_GUI_BETA
         public static string StorePage;
 
         public static HttpClient client;
+
+        PublisherInfo publisherinfo;
         public Form1()
         {
             InitializeComponent();
@@ -78,7 +80,14 @@ namespace Scarlett_Sideloader_GUI_BETA
         
         private void upload_Click(object sender, EventArgs e)
         {
-            SideloaderMain(RandomString(16), appfile.Text, RandomString(32), "blank.png");
+            List<NeededGroupInfo> Neededgroups = new List<NeededGroupInfo>();
+
+            foreach (var item in GroupBoxes.CheckedItems)
+            {
+                string test = item.ToString();
+                Neededgroups.Add(new NeededGroupInfo() { id = Groups[test], name = test });
+            }
+            SideloaderMain(RandomString(16), appfile.Text, RandomString(32), "blank.png", Neededgroups);
         }
 
         public static bool retryFunction(Func<bool> function, int attempts)
@@ -118,13 +127,13 @@ namespace Scarlett_Sideloader_GUI_BETA
             }
         }
 
-        public string SideloaderMain(string appname, string filepath, string appdescription, string appscreenshotname)
+        public string SideloaderMain(string appname, string filepath, string appdescription, string appscreenshotname, List<NeededGroupInfo> Neededgroups)
         {
             string filename = Path.GetFileName(filepath);
 
             //pull needed publisher info
             statusmessage.Text = ("Pulling publisher info");
-            PublisherInfo publisherinfo = retryFunction<PublisherInfo>(() => GetPublisherInfo(), 3);
+            publisherinfo = retryFunction<PublisherInfo>(() => GetPublisherInfo(), 3);
             if (publisherinfo == null)
             {
                 WriteLine("Failed to pull publisher info, cookie is likely invalid", ConsoleColor.Red);
@@ -133,14 +142,7 @@ namespace Scarlett_Sideloader_GUI_BETA
 
             //get all needed group info
             //create empty lists of groups and emails
-            String[] grouplist;
-            List<NeededGroupInfo> Neededgroups = new List<NeededGroupInfo>();
-
-            foreach (var item in GroupBoxes.CheckedItems)
-            {
-                string test = item.ToString();
-                Neededgroups.Add(new NeededGroupInfo() { id = Groups[test], name = test });
-            }
+             
             
             AppInfo createappinfo = new AppInfo()
             {
@@ -330,10 +332,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                     WriteLine("Failed", ConsoleColor.Red);
                     return null;
                 }
-                else
-                {
-                    WriteLine("Success!", ConsoleColor.Green);
-                }
+                
                 //enable xbl for app
                 statusmessage.Text = ($"Enabling Xbox Live for {appname}");
                 EnableXBL(xblids, HttpMethod.Options, null, null);
@@ -423,18 +422,12 @@ namespace Scarlett_Sideloader_GUI_BETA
                         WriteLine("Failed to find packages from package bundle", ConsoleColor.Red);
                         return null;
                     }
-                    WriteLine("Success!", ConsoleColor.Green);
                 }
-                else if ((fileInfo.Extension == ".appxupload") || (fileInfo.Extension == ".msixupload"))
-                {
-                    WriteLine("Detected upload file (please use the --original flag in future)", ConsoleColor.Yellow);
-                    uploadfile = true;
-                }
-                else if ((fileInfo.Extension == ".appx") || (fileInfo.Extension == ".msix"))
-                {
-                    WriteLine("Detected package file", ConsoleColor.Green);
-                }
-                else
+                else if (
+                    !(fileInfo.Extension == ".appx") || 
+                    !(fileInfo.Extension == ".msix") ||
+                    !(fileInfo.Extension == ".appxupload") || !
+                    (fileInfo.Extension == ".msixupload"))
                 {
                     WriteLine("Unknown filetype", ConsoleColor.Red);
                     return null;
@@ -466,7 +459,6 @@ namespace Scarlett_Sideloader_GUI_BETA
                     XElement publisherdisplayname = AppxManifest.Root.Element(XName.Get("Properties", defaultnamespace)).Element(XName.Get("PublisherDisplayName", defaultnamespace));
                     publisherdisplayname.Value = identity.PublisherDisplayName;
                     AppxManifest.Save(Path.Join(packagepath, "AppxManifest.xml"));
-                    WriteLine("Success!", ConsoleColor.Green);
                     statusmessage.Text = ($"Generating patched {filename}");
                     //if we are on windows and the exe or if we aren't and the binary can't be found
                     if ((!File.Exists(Path.Join(Directory.GetCurrentDirectory(), "MakeMsix", "MakeMsix.exe")) && System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) || (!File.Exists(Path.Join(Directory.GetCurrentDirectory(), "makemsix", "makemsix")) && !System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows)))
@@ -691,10 +683,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
-            }
-            else
-            {
-                WriteLine("Success!", ConsoleColor.Green);
             }
 
             //set listing
@@ -2798,46 +2786,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             }
         }
 
-        public NeededGroupInfo CreateGroup(CreateGroupInfo creategroupinfo)
-        {
-            var stringPayload = JsonConvert.SerializeObject(creategroupinfo);
-            var content = new StringContent(stringPayload, System.Text.Encoding.UTF8, "application/json");
-            var response = client.PostAsync((partneruri.ToString() + "/dashboard/monetization/group-management/api/groups/"), content);
-            response.Wait();
-            if (response.Result.IsSuccessStatusCode)
-            {
-
-                string responseresult = response.Result.Content.ReadAsStringAsync().Result;
-                return JsonConvert.DeserializeObject<NeededGroupInfo>(responseresult);
-            }
-            else
-            {
-                statusmessage.Text = response.Result.Content.ReadAsStringAsync().Result;
-                return null;
-            }
-        }
-
-        static bool? CheckAvailability(string name)
-        {
-            var content = new StringContent($"\"{name}\"", System.Text.Encoding.UTF8, "application/json");
-            var response = client.PostAsync((partneruri.ToString() + "/en-us/dashboard/product/api/names/checkAvailability?scope=application&productType=Application"), content);
-            response.Wait();
-            if (response.Result.IsSuccessStatusCode)
-            {
-                string responseresult = response.Result.Content.ReadAsStringAsync().Result;
-                bool available;
-                if (bool.TryParse(responseresult, out available))
-                    return available;
-                else
-                    return null;
-
-            }
-            else
-            {
-                return null;
-            }
-        }
-
         static NeededAppInfo CreateApp(AppInfo appinfo)
         {
             var stringPayload = JsonConvert.SerializeObject(appinfo);
@@ -2852,50 +2800,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             else
             {
                 return null;
-            }
-        }
-
-        static bool ReserveAppName(NeededAppInfo appinfo, string name)
-        {
-            var content = new StringContent($"\"{name}\"", System.Text.Encoding.UTF8, "application/json");
-            var response = client.PostAsync((partneruri.ToString() + $"/en-us/dashboard/product/api/names/{appinfo.bigId}"), content);
-            response.Wait();
-            if (response.Result.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        static bool SwitchAppName(NeededAppInfo appinfo, string name)
-        {
-            var content = new StringContent($"\"{name}\"", System.Text.Encoding.UTF8, "application/json");
-            var response = client.PostAsync((partneruri.ToString() + $"/en-us/dashboard/product/api/names/{appinfo.bigId}/updateAlias"), content);
-            response.Wait();
-            if (response.Result.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        static bool DeleteAppName(NeededAppInfo appinfo, string name)
-        {
-            var response = client.DeleteAsync((partneruri.ToString() + $"/en-us/dashboard/product/api/names/{appinfo.bigId}?name={name}"));
-            response.Wait();
-            if (response.Result.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
             }
         }
 
@@ -2942,23 +2846,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             var stringPayload = JsonConvert.SerializeObject(storeinfo);
             var content = new StringContent(stringPayload, System.Text.Encoding.UTF8, "application/json");
             var response = client.PostAsync((partneruri.ToString() + $"/en-us/dashboard/availability/api/product/{storeinfo.BigId}/submissions/{neededsubmissioninfo.id}"), content);
-            response.Wait();
-            if (response.Result.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-
-        static bool ReserveName(StoreInfo storeinfo, NeededSubmissionInfo neededsubmissioninfo)
-        {
-            var stringPayload = JsonConvert.SerializeObject(storeinfo);
-            var content = new StringContent(stringPayload, System.Text.Encoding.UTF8, "application/json");
-            var response = client.PostAsync((partneruri.ToString() + $"/en-us/dashboard/product/api/names/{neededsubmissioninfo.id}"), content);
             response.Wait();
             if (response.Result.IsSuccessStatusCode)
             {
