@@ -57,6 +57,8 @@ namespace Scarlett_Sideloader_GUI_BETA
                 MessageBox.Show("Failed to get groups, token may be invalid", "Login err", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 GroupBoxes.Enabled = false;
                 upload.Enabled = false;
+                appPrivate.Enabled = false;
+                appPublic.Enabled = false;
                 return;
             }
             foreach (NeededGroupInfo group in groups)
@@ -66,6 +68,8 @@ namespace Scarlett_Sideloader_GUI_BETA
             }
             GroupBoxes.Enabled = true;
             upload.Enabled = true;
+            appPrivate.Enabled = true;
+            appPublic.Enabled = true;
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -87,7 +91,10 @@ namespace Scarlett_Sideloader_GUI_BETA
                 string test = item.ToString();
                 Neededgroups.Add(new NeededGroupInfo() { id = Groups[test], name = test });
             }
-            SideloaderMain(RandomString(16), appfile.Text, RandomString(32), "blank.png", Neededgroups);
+            if (namerandomised.Checked)
+                AppName.Text = RandomString(16);
+            
+            SideloaderMain( AppName.Text, appfile.Text, RandomString(32), "blank.png", Neededgroups);
         }
 
         public static bool retryFunction(Func<bool> function, int attempts)
@@ -264,9 +271,9 @@ namespace Scarlett_Sideloader_GUI_BETA
                 PublisherId = publisherinfo.sellerId,
                 Visibility = new APPVisibility()
                 {
-                    GroupIds = groupids,
-                    DistributionMode = "Public",
-                    Audience = "PrivateBeta"
+                    GroupIds = appPublic.Checked ? new List<string>() : groupids,
+                    DistributionMode = appPublic.Checked ? "Hidden": "Public",
+                    Audience = appPublic.Checked ? "Public" : "PrivateBeta"
                 }
             };
 
@@ -280,6 +287,7 @@ namespace Scarlett_Sideloader_GUI_BETA
             statusmessage.Text = ($"Getting identity info for {appname}");
 
             Identity identity = GetIdentityInfo(createdappinfo);
+            if (identity == null)
             {
                 WriteLine("Failed", ConsoleColor.Red);
                 return null;
@@ -2973,9 +2981,8 @@ namespace Scarlett_Sideloader_GUI_BETA
             var response = client.SendAsync(request);
             response.Wait();
             if (!response.Result.IsSuccessStatusCode)
-            {
                 return false;
-            }
+
             string responseresult = response.Result.Content.ReadAsStringAsync().Result;
             ScreenshotResponse screenshotresponse = JsonConvert.DeserializeObject<ScreenshotResponse>(responseresult);
 
@@ -2987,9 +2994,7 @@ namespace Scarlett_Sideloader_GUI_BETA
             response = client.SendAsync(request);
             response.Wait();
             if (!response.Result.IsSuccessStatusCode)
-            {
                 return false;
-            }
 
             string listingasseturl = partneruri + $"en-us/dashboard/listings/Listing/ListingAsset?productId={neededappinfo.bigId}&submissionId={neededsubmissioninfo.id}&listingId={listinginfo.ListingId}&listingAssetId=0&productType=App&languageId=4";
             request = new HttpRequestMessage(HttpMethod.Post, listingasseturl);
@@ -2998,9 +3003,7 @@ namespace Scarlett_Sideloader_GUI_BETA
             response = client.SendAsync(request);
             response.Wait();
             if (!response.Result.IsSuccessStatusCode)
-            {
                 return false;
-            }
 
             //do some block stuff, idk what the f*** this does or why it needs to be done
             string ingestblocklisturl = $"{screenshotresponse.UploadSasUrl}&comp=blocklist";
@@ -3011,16 +3014,13 @@ namespace Scarlett_Sideloader_GUI_BETA
             response = client.SendAsync(request);
             response.Wait();
             if (!response.Result.IsSuccessStatusCode)
-            {
                 return false;
-            }
+                
             request = new HttpRequestMessage(HttpMethod.Get, ingestblocklisturl);
             response = client.SendAsync(request);
             response.Wait();
             if (response.Result.StatusCode != HttpStatusCode.NotFound)
-            {
                 return false;
-            }
 
             string ingestblockurl = $"{screenshotresponse.UploadSasUrl}&comp=block&blockid=MDAwMDA=";
             request = new HttpRequestMessage(HttpMethod.Options, ingestblockurl);
@@ -3067,35 +3067,6 @@ namespace Scarlett_Sideloader_GUI_BETA
             }
 
             return true;
-            /*var uriBuilder = new UriBuilder((xboxuri + $"/upload/uploadchunk/{neededuploadinfo.UploadInfo.XfusId}"));
-            var query = HttpUtility.ParseQueryString(uriBuilder.Query);
-            query["blockNumber"] = chunknum.ToString();
-            query["runUploadSynchronously"] = true.ToString();
-            query["token"] = token;
-            uriBuilder.Query = query.ToString();
-            string uristring = uriBuilder.ToString();
-            var request = new HttpRequestMessage(httpmethod, uristring);
-            if (chunk != null)
-            {
-                request.Content = new ByteArrayContent(chunk);
-            }
-            var response = client.SendAsync(request);
-            try
-            {
-                response.Wait();
-            }
-            catch
-            {
-                return false;
-            }
-            if (response.Result.IsSuccessStatusCode)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }*/
         }
 
         static bool UploadFinished(string token, NeededUploadInfo neededuploadinfo, HttpMethod httpmethod)
@@ -3236,7 +3207,34 @@ namespace Scarlett_Sideloader_GUI_BETA
 
         private void app_CheckedChanged(object sender, EventArgs e)
         {
-            app.Checked = !game.Checked;
+            game.Checked = !app.Checked;
+        }
+
+        private void appPrivate_CheckedChanged(object sender, EventArgs e)
+        {
+            appPublic.Checked = !appPrivate.Checked;
+            GroupBoxes.Enabled = appPrivate.Checked;
+        }
+
+        private void appPublic_CheckedChanged(object sender, EventArgs e)
+        {
+            appPrivate.Checked = !appPublic.Checked;
+            GroupBoxes.Enabled = appPrivate.Checked;
+        }
+
+        private void namerandomised_CheckedChanged(object sender, EventArgs e)
+        {
+            namecustom.Checked = !namerandomised.Checked;
+        }
+
+        private void namecustom_CheckedChanged(object sender, EventArgs e)
+        {
+            namerandomised.Checked = !namecustom.Checked;
+        }
+
+        private void label7_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
