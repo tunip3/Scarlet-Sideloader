@@ -1,7 +1,7 @@
 # Scarlet-Sideloader-GUI
 Scarlet Sideloader GUI is as the name implies a GUI version of the Scarlet Sideloader tool designed to help you push apps to retail via the store.
 
-![image](https://user-images.githubusercontent.com/26260613/224582532-e4c0f018-c7e2-480d-a7b9-98b44336e02d.png)
+![image](https://user-images.githubusercontent.com/26260613/226754603-a2f8a6e8-d173-47d1-a365-4dde6aa6327d.png)
 
 This will only push apps to the store with randomized names and will only allow you to push private apps to selected groups.
 The names are randomized because Microsoft has started to detect apps based on their names and apps are private because private apps are harder to detect.
