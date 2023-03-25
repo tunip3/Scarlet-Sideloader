@@ -52,9 +52,10 @@ namespace Scarlett_Sideloader_GUI_BETA
             GroupBoxes.Items.Clear();
             Groups.Clear();
             List<NeededGroupInfo> groups = GetAllGroups();
-            if (groups == null)
+            publisherinfo = retryFunction<PublisherInfo>(() => GetPublisherInfo(), 3);
+            if (groups == null || publisherinfo == null)
             {
-                MessageBox.Show("Failed to get groups, token may be invalid", "Login err", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Failed to get groups or publisher info, token may be invalid", "Login err", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 GroupBoxes.Enabled = false;
                 upload.Enabled = false;
                 appPrivate.Enabled = false;
@@ -138,14 +139,7 @@ namespace Scarlett_Sideloader_GUI_BETA
         {
             string filename = Path.GetFileName(filepath);
 
-            //pull needed publisher info
-            statusmessage.Text = ("Pulling publisher info");
-            publisherinfo = retryFunction<PublisherInfo>(() => GetPublisherInfo(), 3);
-            if (publisherinfo == null)
-            {
-                WriteLine("Failed to pull publisher info, cookie is likely invalid", ConsoleColor.Red);
-                return null;
-            }
+            
 
             //get all needed group info
             //create empty lists of groups and emails
@@ -475,7 +469,8 @@ namespace Scarlett_Sideloader_GUI_BETA
                         return null;
                     }
 
-                    string appxpath = Path.Join(Path.GetTempPath(), $"Patched-{filename}");
+                    string tempfilename = $"{RandomString(10)}.appx";
+                    string appxpath = Path.Join(Path.GetTempPath(), tempfilename);
                     bool msixcreation = retryFunction(() => MakeMsix(packagepath, appxpath), 3);
                     //clear out package path too
                     if (Directory.Exists(packagepath))
@@ -485,7 +480,7 @@ namespace Scarlett_Sideloader_GUI_BETA
                     if (msixcreation)
                     {
                         filepath = appxpath;
-                        filename = $"Patched-{filename}";
+                        filename = tempfilename;
                     }
                     else
                     {
